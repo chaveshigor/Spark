@@ -7,7 +7,7 @@ import os
 # Importing the project functions 
 from matrixesBuilders import *
 from inputHandler.index import readInput
-import matplotlib.pyplot as plt
+import matplotlib.pyplot as plt 
 
 before = datetime.now()
 
