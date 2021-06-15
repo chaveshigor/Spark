@@ -1,55 +1,163 @@
-####Developer: Higor Chaves
-import matplotlib.pyplot as plt
-from numpy.linalg import inv
+# Importing the project dependences
+from datetime import datetime
 import numpy as np
-import matplotlib
-import math
+from numpy.linalg import inv
+import os
 
-#Declaring the main variables
-dt = .000001
-finalTime = .001
-Vin = lambda t: 100*math.sin(2*math.pi*60*t)
-Vin = lambda t: 100
+# Importing the project functions 
+from matrixesBuilders import *
+from inputHandler.index import readInput
+import matplotlib.pyplot as plt
 
-Zin = 10
-C = 10**-6
-Rc = dt/(2*C)
+before = datetime.now()
 
-#Creating the impedances, admitances and time matrixes
-gm = np.array([[1/Zin + 2*C/dt]])
+time = []
+us = 50
+dt = .000001*us
+timeToSimulate = 1
+
+#Declaring the elements
+inputPath = r'C:\Users\higor\OneDrive\projetos\tcc\Exemplo copy.atp'
+elements, allNodes = readInput(inputPath, dt)
+#print(allNodes)
+
+# for ele in elements:
+#     print(ele.type, ele.p)
+
+#Declaring admitances matrix
+gm = AdmitancesMatrix(elements).gm
 zm = inv(gm)
-tm = np.arange(0, finalTime, dt)
-im = np.zeros(tm.shape)
-ih = np.zeros(tm.shape)
-vb = np.zeros(tm.shape)
-ic = np.zeros(tm.shape)
 
-#Starting the main loop
-for i in range(int(finalTime/dt)+1):
+#Declaring the nodes tensions matrix
+vb = NodesMatrix(elements).nodes
+for i in range(len(vb)):
+    vb[i].append(0)
     
-    t = i*dt
+#Declaring currents matrix
+Im = CurrentMatrix(elements)
+a = 0
 
-    if i == 0:
-        ih[i] = Vin(t)/Zin
-        ic[i] = Vin(t)/Zin
-        vb[i] = 0
+#Main loop
+while True:
+
+    #Getting the current time
+    now = datetime.now()
+
+    if (now - before).total_seconds() >= timeToSimulate:
+        print('Duração da simulação: '+str((now - before).total_seconds()))
+        break
+
+    #Declaring and incrementing the time matrix
+    t = dt * a
+    time.append(t)
+
+    #Solving initial conditions
+    if a == 0:
+        for element in elements:
+            element.resolveInitialConditions()
+        
+        a += 1
         continue
 
-    Iin = Vin(t)/Zin
+    #Solving Ih
+    for element in elements:
+        if element.type == 'V':
+            element.resolveIh(a)
+        else:
+            element.resolveIh()
+    
+    #Solving Tensions
+    iNow = Im.buildCurrentMatrix()
+    vNow = np.matmul(zm, iNow)
+   
+    for i in range(len(vNow)):
+        vb[i].append(vNow[i][0])
+        
+    #Solving elements tensions
+    for element in elements:
+        k = element.resolveV(vNow)
 
-    ih[i] = -1/Rc*vb[i-1] - ic[i-1]
-    vb[i] = zm[0][0]*(Iin - ih[i])
-    ic[i] = 1/Rc * vb[i] + ih[i]
+    #resolveIc
+    for element in elements:
+        element.resolveI()
 
-    if(i<20):
-        print(i, '\t', ih[i], '\t', ic[i])
+    a += 1
 
-#print(vb[int(0.001/dt)])
-fig, ax = plt.subplots()
-ax.plot(tm, vb)
-ax.set(xlabel='time (s)', ylabel='voltage (V)', title='Tensão')
-ax.grid()
-plt.show()
+#Writing the results in folders
+folders = os.listdir()
+if 'tensions' not in folders:
+    os.mkdir('tensions')
+if 'currents' not in folders:
+    os.mkdir('currents')
 
-#multiplying matrixes
-#np.matmul(g, v(0))
+counter = 1
+for bar in vb:
+    file = open('tensions/Barra '+str(counter)+'.txt', 'w')
+    for v in bar:
+        file.write(str(v).replace('.', ',')+'\n')
+    file.close()
+    counter += 1
+
+for ele in elements:
+    if ele.type == 'V':
+        continue
+    try:
+        currents = ele.ic
+        file = open('currents/'+str(ele.type)+' '+str(ele.p)+' .txt', 'w')
+        for i in currents:
+            file.write(str(i).replace('.', ',')+'\n')
+        file.close()
+    except:
+        pass
+
+for i in range(len(time)):
+    time[i] = time[i]/dt*1000
+
+#Showing the results
+while True:
+
+    typeOfResponse = input('\nTipos de resultado: \n1 - Tensão\n2 - Corrente\n\nDigite o resultado a ser mostrado: ')
+
+    if typeOfResponse == '1':
+        #Printing graphic
+        barr = int(input('Digite a barra a se visualizar o resultado: '))
+
+        fig, ax = plt.subplots()
+        ax.plot(time[1:10000], vb[barr-1][1:10000])
+        ax.set(xlabel='time (ms)', ylabel='voltage (V)', title='Tensão')
+        ax.grid()
+        plt.show()
+
+        file = open('teste2.txt', 'w')
+        for v in vb[barr-1][0:200]:
+            file.write('"'+str(v).replace('.', ',')+'"'+'\n')
+
+    elif typeOfResponse == '2':
+        for ele in elements:
+
+            if ele.type == 'V':
+                continue
+
+            try:
+                fig, ax = plt.subplots()
+                current = ele.ic
+
+                if len(time)>len(current):
+                    ax.plot(time[1:len(current)], current[1:len(current)])
+                elif len(current)>len(time):
+                    ax.plot(time[1:len(time)], current[1:len(time)])
+                else:
+                    ax.plot(time[1:len(time)], current[1:len(time)])
+
+                ax.set(xlabel='time (ms)', ylabel='current (A)', title='Corrente '+ele.type+' '+ele.p)
+                ax.grid()
+                plt.show()
+            except Exception as err:
+                print(err)
+                pass
+    
+    else:
+        break
+
+
+

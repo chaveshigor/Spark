@@ -1,9 +1,10 @@
-from capacitance import Capacitor
-from resistence import Resistor
-from indutance import Indutance
-from source import Source
+# Importing all entities
+from entities.capacitance import Capacitor
+from entities.resistence import Resistor
+from entities.indutance import Indutance
+from entities.source import Source
 
-
+# Declaring the main function
 def readInput(inputPath, dt):
 
     elements = []
