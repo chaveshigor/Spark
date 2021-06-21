@@ -2,7 +2,7 @@ from numpy.linalg import inv
 import numpy as np
 import math
 
-class Capacitor:
+class Capacitance:
 
     def __init__(self, p, C, v0, i0, dt):
 

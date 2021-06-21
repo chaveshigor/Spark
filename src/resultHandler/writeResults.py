@@ -1,6 +1,10 @@
 import matplotlib.pyplot as plt
+import os 
 
-def showResults(time, vb, elements):
+def showResults(time: list, vb: list, elements: list, writeFiles: bool, dt: float):
+
+    if writeFiles:
+        writeResultsInFile(time, vb, elements, dt)
 
     while True:
 
@@ -46,3 +50,35 @@ def showResults(time, vb, elements):
         
         else:
             break
+
+def writeResultsInFile(time, vb, elements, dt):
+
+    folders = os.listdir()
+
+    if 'tensions' not in folders:
+        os.mkdir('tensions')
+    if 'currents' not in folders:
+        os.mkdir('currents')
+
+    counter = 1
+    for bar in vb:
+        file = open('tensions/Barra '+str(counter)+'.txt', 'w')
+        for v in bar:
+            file.write(str(v).replace('.', ',')+'\n')
+        file.close()
+        counter += 1
+
+    for ele in elements:
+        if ele.type == 'V':
+            continue
+        try:
+            currents = ele.ic
+            file = open('currents/'+str(ele.type)+' '+str(ele.p)+' .txt', 'w')
+            for i in currents:
+                file.write(str(i).replace('.', ',')+'\n')
+            file.close()
+        except:
+            pass
+
+    for i in range(len(time)):
+        time[i] = time[i]/dt*1000

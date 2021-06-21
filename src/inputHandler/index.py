@@ -1,8 +1,9 @@
 # Importing all entities
-from entities.capacitance import Capacitor
 from entities.resistence import Resistor
 from entities.indutance import Indutance
+from entities.capacitance import Capacitance
 from entities.source import Source
+from inputHandler.rlcReader import rlcReader
 
 # Declaring the main function
 def readInput(inputPath, dt):
@@ -50,132 +51,24 @@ def readInput(inputPath, dt):
             pass
 
         if analyzeType == '/BRANCH':
-            r = line[colR[0]-1:colR[1]]
-            l = line[colL[0]-1:colL[1]]
-            c = line[colC[0]-1:colC[1]]
-            n1 = line[coln1[0]-1:coln1[1]]
-            n2 = line[coln2[0]-1:coln2[1]]
-            
-            if len(r) == 0 and len(l) == 0 and len(c) == 0:
-                continue
-
-            if n1 == '      ' or n1 == '     ' or n1 == '    ':
-                n1 = '0'
-
-            if n2 == '      ' or n2 == '     ' or n2 == '    ':
-                n2 = '0'
-                #print('eu')
-
-            if len(r) > 0:
+            # Reading the RLC elements
+            listOfElementsInThisRow, nodes, nodeCounter = rlcReader(colR, colL, colC, coln1, coln2, line, nodes, nodeCounter)
+            print(listOfElementsInThisRow)
+            for entity in listOfElementsInThisRow:
                 try:
-                    r = float(r)
-                    elementsTemp.append(['r', r])
+                    n1 = nodes[listOfElementsInThisRow[entity]['nodes'][0]]
+                    n2 = nodes[listOfElementsInThisRow[entity]['nodes'][1]]
+                    value = listOfElementsInThisRow[entity]['value']
                 except:
-                    pass
-            
-            if len(l) > 0:
-                try:
-                    l = float(l)
-                    elementsTemp.append(['l', l])
-                except:
-                    pass
-
-            if len(c) > 0:
-                try:
-                    c = float(c)*10**-6
-                    elementsTemp.append(['c', c])
-                except:
-                    pass               
-
-            
-            #More than one element in the line of the input file
-            if len(elementsTemp) > 1:
-
-                for k in range(len(elementsTemp)):
-                    
-                    #First element of the line
-                    if k == 0:
-                        
-                        if n1 not in nodes:
-                            nodes[n1] = str(nodeCounter)
-                            nodeCounter += 1
-
-                        n2 = str(nodeCounter)
-                        # print('n2 =', n2)
-                        nodes[n2] = str(nodeCounter)
-                        #nodeCounter += 1
-
-                        currentNode = nodes[n1]+'-'+nodes[n2]
-
-                        if elementsTemp[k][0] == 'r':
-                            elements.append(Resistor(currentNode, elementsTemp[k][1]))
-                        if elementsTemp[k][0] == 'l':
-                            elements.append(Indutance(currentNode, elementsTemp[k][1], 0, 0, dt))
-                        if elementsTemp[k][0] == 'c':
-                            elements.append(Capacitor(currentNode, elementsTemp[k][1], 0, 0, dt))
-
-                    #Last element of the line
-                    elif k == len(elementsTemp)-1:
-                        n1 = str(nodeCounter)
-                        nodes[n1] = str(nodeCounter)
-                        nodeCounter += 1
-
-                        n2 = line[coln2[0]-1:coln2[1]]
-                        if n2 == '      ' or n2 == '     ' or n2 == '    ':
-                            n2 = '0'
-
-                        if n2 not in nodes:
-                            nodes[n2] = str(nodeCounter)
-                            #nodeCounter += 1
-
-                        currentNode = nodes[n1]+'-'+nodes[n2]
-
-                        if elementsTemp[k][0] == 'r':
-                            elements.append(Resistor(currentNode, elementsTemp[k][1]))
-                        if elementsTemp[k][0] == 'l':
-                            elements.append(Indutance(currentNode, elementsTemp[k][1], 0, 0, dt))
-                        if elementsTemp[k][0] == 'c':
-                            elements.append(Capacitor(currentNode, elementsTemp[k][1], 0, 0, dt))
-                    
-                    #Some midle element of the line
-                    else:
-                        # print(elementsTemp[k], nodeCounter)
-                        n1 = str(nodeCounter)
-                        nodes[n1] = str(nodeCounter)
-                        nodeCounter += 1
-
-                        n2 = str(nodeCounter)
-                        nodes[n2] = str(nodeCounter)
-                        #nodeCounter += 1
-
-                        currentNode = nodes[n1]+'-'+nodes[n2]
-
-                        if elementsTemp[k][0] == 'r':
-                            elements.append(Resistor(currentNode, elementsTemp[k][1]))
-                        if elementsTemp[k][0] == 'l':
-                            elements.append(Indutance(currentNode, elementsTemp[k][1], 0, 0, dt))
-                        if elementsTemp[k][0] == 'c':
-                            elements.append(Capacitor(currentNode, elementsTemp[k][1], 0, 0, dt))
-
-
-            #Just one element in the line of the input file
-            else:
-
-                if n1 not in nodes:
-                    nodes[n1] = str(nodeCounter)
-                    nodeCounter += 1
-                if n2 not in nodes:
-                    nodes[n2] = str(nodeCounter)
-                    nodeCounter += 1
-                
-                currentNode = nodes[n1]+'-'+nodes[n2]
-
-                if elementsTemp[0][0] == 'r':
-                    elements.append(Resistor(currentNode, elementsTemp[0][1]))
-                if elementsTemp[0][0] == 'l':
-                    elements.append(Indutance(currentNode, elementsTemp[0][1], 0, 0, dt))
-                if elementsTemp[0][0] == 'c':
-                    elements.append(Capacitor(currentNode, elementsTemp[0][1], 0, 0, dt))
+                    print('err')
+                if entity == 'r' and listOfElementsInThisRow[entity]['value'] != None:
+                    elements.append(Resistor(n1+'-'+n2, value))
+                elif entity == 'l' and listOfElementsInThisRow[entity]['value'] != None:
+                    elements.append(Indutance(n1+'-'+n2, value, 0, 0, dt))
+                elif entity == 'c' and listOfElementsInThisRow[entity]['value'] != None:
+                    elements.append(Capacitance(n1+'-'+n2, value, 0, 0, dt))
+                else:
+                    continue
 
         if analyzeType == '/SOURCE':
             
@@ -247,9 +140,9 @@ def readInput(inputPath, dt):
 
 if __name__ == '__main__':
 
-    elements, nodes = readInput(r'C:\Users\higor\OneDrive\projetos\tcc\Exemplo copy.atp', .0001)
-    #print(nodes)
+    elements, nodes = readInput(r'C:\Users\higor\OneDrive\projetos\Spark\inputExamples\Exemplo.atp', .0001)
+    #print(elements)
     #print(nodes)
 
-    for i in elements:
-        print(i.p, i.type)
+    # for i in elements:
+    #     print(i.p, i.type)
