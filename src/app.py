@@ -18,7 +18,7 @@ timeToSimulate = 1
 writeResults = False
 
 # Declaring the elements
-inputPath = r'C:\Users\higor\OneDrive\projetos\Spark\inputExamples\Exemplo.atp'
+inputPath = r'C:\Users\higor\OneDrive\projetos\teste\Spark\inputExamples\sourcesac.atp'
 elements, allNodes = readInput(inputPath, dt)
 
 # Declaring admitances matrix
@@ -58,7 +58,7 @@ while True:
 
     # Solving Ih
     for element in elements:
-        if element.type == 'V':
+        if element.type == 'V' or element.type == 'I':
             element.resolveIh(a)
         else:
             element.resolveIh()

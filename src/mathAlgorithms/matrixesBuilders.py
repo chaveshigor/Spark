@@ -44,9 +44,13 @@ class AdmitancesMatrix:
                 
                 if i == j:
                     for element in nodes[i+1]:
+                        if element.type == 'I':
+                            continue
                         gm[i][j] += element.Y
                 else:
                     for element in nodes[j+1]:
+                        if element.type == 'I':
+                            continue
                         if element in nodes[i+1]:
                             gm[i][j] -= element.Y
         self.gm = gm

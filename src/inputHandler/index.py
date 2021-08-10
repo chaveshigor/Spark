@@ -3,12 +3,15 @@ from entities.resistence import Resistor
 from entities.indutance import Indutance
 from entities.capacitance import Capacitance
 from entities.source import Source
+from entities.currentSource import CurrentSource
 from inputHandler.rlcReader import rlcReader
+from inputHandler.sourceReader import sourceReader
 
 # Declaring the main function
 def readInput(inputPath, dt):
 
     elements = []
+    sourcesTemp = []
     nodes = {'0':'0'}
 
     coln1 = [3, 8]
@@ -21,6 +24,7 @@ def readInput(inputPath, dt):
     colAmp = [11, 20]
     colf = [21, 30]
     colPh = [31, 40]
+    colSig = [9, 10]
     colTStart = [61, 70]
     colTStop = [71, 80]
 
@@ -53,14 +57,13 @@ def readInput(inputPath, dt):
         if analyzeType == '/BRANCH':
             # Reading the RLC elements
             listOfElementsInThisRow, nodes, nodeCounter = rlcReader(colR, colL, colC, coln1, coln2, line, nodes, nodeCounter)
-            print(listOfElementsInThisRow)
             for entity in listOfElementsInThisRow:
                 try:
                     n1 = nodes[listOfElementsInThisRow[entity]['nodes'][0]]
                     n2 = nodes[listOfElementsInThisRow[entity]['nodes'][1]]
                     value = listOfElementsInThisRow[entity]['value']
                 except:
-                    print('err')
+                    pass
                 if entity == 'r' and listOfElementsInThisRow[entity]['value'] != None:
                     elements.append(Resistor(n1+'-'+n2, value))
                 elif entity == 'l' and listOfElementsInThisRow[entity]['value'] != None:
@@ -71,71 +74,39 @@ def readInput(inputPath, dt):
                     continue
 
         if analyzeType == '/SOURCE':
-            
-            sourceType = line[0:2]
-            n1 = line[coln1[0]-1:coln1[1]]
-            n2 = 0
-            vm = line[colAmp[0]-1:colAmp[1]]
-            f = line[colf[0]-1:colf[1]]
-            phase = line[colPh[0]-1:colPh[1]]
-            tStart = line[colTStart[0]-1:colTStart[1]]
-            tStop = line[colTStop[0]-1:colTStop[1]]
+            # Reading the tension sources
+            sourcesTemp = []
+            sourcesTemp, nodes, nodeCounter = sourceReader(nodes, nodeCounter, line, coln1, colAmp, colf, colPh, colSig, colTStart, colTStop, sourcesTemp)
+            for source in sourcesTemp:
+                if source['type'] == None:
+                    continue
+                currentNodes = source['nodes'][0] + '-' + source['nodes'][1]
+                signal = source['signal']
+                vm = source['amplitude']
 
-            if sourceType == '18':
-                n2 = nodes[n1]
-                n1 = elements[-1].p.split('-')[1]
-                currentNodes = str(n2)+'-'+str(n1)
-                elements[-1].p = currentNodes
+                if source['type'] == 'CA':
+                    f = source['frequency']
+                    phase = source['phase']
+                    if signal == 'current':
+                        sourceAC = CurrentSource(currentNodes, 'CA', [vm, f, phase], dt)
+                    else:
+                        sourceAC = Source(currentNodes, 'CA', [vm, 0.00000000001, f, phase], dt)
+                    elements.append(sourceAC)
+                    #continue
 
-                # currentNodes = str(n2)+'-'+str(0)
-                # print(currentNodes)
-                # elements.append(Resistor(currentNodes, 0.0000000001))
-                continue
-
-            if len(n1) == 0:
-                continue
-
-            if '          ' in vm:
-                continue
-
-            if '         ' in tStart:
-                tStart = 0.0
-            else:
-                try:
-                    tStart = float(tStart)
-                    tStop = float(tStop)
-
-                    if tStart == -1.0:
-                        tStart = 0.0
-                    
-                except:
-                    pass
-
-            if '         ' in phase:
-                phase = 0.0
-            else:
-                try:
-                    phase = float(phase)
-                except:
-                    pass
-
-            try:
-                vm = float(vm)
-                f = float(f)
-                #print(vm, f, phase, tStart, tStop)
-                #declarar elemento aqui
-                if n1 not in nodes:
-                    nodes[n1] = str(nodeCounter)
-                    nodeCounter += 1
-                currentNodes = str(0)+'-'+str(nodes[n1])
-                sourceAC = Source(currentNodes, 'CA', [vm, 0.00000000001, f, phase], dt)
-                elements.append(sourceAC)
-            except:
-                pass
+                elif source['type'] == 'CC':
+                    if signal == 'current':
+                        sourceDC = CurrentSource(currentNodes, 'CC', [vm], dt)
+                    else:
+                        sourceDC = Source(currentNodes, 'CC', [vm, 0.00000000001], dt)
+                    elements.append(sourceDC)
+                    #continue
+                
 
 
 
-
+    for ele in elements:
+        print(ele.type, ele.p)
     return elements, nodes
 
 if __name__ == '__main__':
