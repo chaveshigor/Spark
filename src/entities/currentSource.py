@@ -1,31 +1,29 @@
 import math
 
-class Source:
+class CurrentSource:
 
     def __init__(self, p, typeOf, params, dt):
         
-        self.type = 'V'
+        self.type = 'I'
         self.typeOf = typeOf
         self.params = params
         self.p = p
         self.ih = []
         self.dt = dt
-
+        self.ic = []
+        
         if self.typeOf == 'CC':
-            self.vm = params[0]
-            self.Zin = params[1]
-            self.v = lambda t: self.vm
+            self.im = params[0]
+            self.current = lambda t: self.im
 
         elif self.typeOf == 'CA':
-            self.vm = params[0]
-            self.Zin = params[1]
-            self.f = params[2]
-            self.phase = params[3] * math.pi/180
-            self.v = lambda t: self.vm*math.sin(2*math.pi*self.f*t + self.phase)
+            self.im = params[0]
+            self.f = params[1]
+            self.phase = params[2] * math.pi/180
+            self.current = lambda t: self.im*math.sin(2*math.pi*self.f*t + self.phase)
 
-        self.Y = 1/self.Zin
-        self.ihf = lambda i: self.v(self.dt*i)/self.Zin
-
+        self.ihf = lambda i: self.current(self.dt*i)
+        
     def resolveInitialConditions(self):
         pass
 
@@ -39,4 +37,4 @@ class Source:
         pass
 
     def resolveI(self):
-        pass
+        self.ic.append(self.ih[-1])
