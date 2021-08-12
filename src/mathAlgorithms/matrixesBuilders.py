@@ -77,7 +77,7 @@ class CurrentMatrix:
 
             if p1 == 0:
 
-                if element.type != 'V':
+                if element.type != 'V' and element.type != 'I':
                     k = -1
     
 
@@ -90,7 +90,7 @@ class CurrentMatrix:
 
             if p2 == 0:
 
-                if element.type != 'V':
+                if element.type != 'V' and element.type != 'I':
                     k = -1
 
                 try:

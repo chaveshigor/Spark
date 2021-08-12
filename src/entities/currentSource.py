@@ -31,6 +31,8 @@ class CurrentSource:
         if i == 0:
             self.ih.append(0)
         else:
+            if i < 10:
+                print(self.ihf(i))
             self.ih.append(self.ihf(i))
 
     def resolveV(self, v):
