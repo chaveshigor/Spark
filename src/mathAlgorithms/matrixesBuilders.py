@@ -1,23 +1,40 @@
 import numpy as np
 
+def calculateDimension(elements):
+
+    dimension = 0
+
+    for element in elements:
+        n1 = int(element.p.split('-')[0])
+        n2 = int(element.p.split('-')[1])
+
+        if n1 > dimension:
+            dimension = n1
+        if n2 > dimension:
+            dimension = n2
+
+        if element.type == 'Ideal Transformer':
+            n1 = int(element.s.split('-')[0])
+            n2 = int(element.s.split('-')[1])
+
+            if n1 > dimension:
+                dimension = n1
+            if n2 > dimension:
+                dimension = n2
+
+    return dimension
+
 class AdmitancesMatrix:
 
     def __init__(self, elements):
         self.elements = elements
         self.buildAdmitancesMatrix()
 
+
     def buildAdmitancesMatrix(self):
         
         #Counting how much nodes the circuit has
-        dimension = 0
-
-        for element in self.elements:
-            p1 = int(element.p.split('-')[0])
-            p2 = int(element.p.split('-')[1])
-            if p1 > dimension:
-                dimension = p1
-            if p2 > dimension:
-                dimension = p2
+        dimension = calculateDimension(self.elements)
 
         gm = np.zeros((dimension, dimension))
         
@@ -37,22 +54,49 @@ class AdmitancesMatrix:
                 nodes[p2].append(element)
             except:
                 nodes[p2] = [element]
+
+            if element.type == 'Ideal Transformer':
+                p1 = int(element.s.split('-')[0])
+                p2 = int(element.s.split('-')[1])
+
+                try:
+                    nodes[p1].append(element)
+                except:
+                    nodes[p1] = [element]
+                    
+                try:
+                    nodes[p2].append(element)
+                except:
+                    nodes[p2] = [element]
         
         #Building the matrix
         for i in range(dimension):
             for j in range(dimension):
                 
+                # Main diagonal
                 if i == j:
                     for element in nodes[i+1]:
+                        # Dont consider current sources
                         if element.type == 'I':
                             continue
-                        gm[i][j] += element.Y
+                        elif element.type == 'R' or element.type == 'L' or element.type == 'C' or element.type == 'V':
+                            gm[i][j] += element.Y
+                        elif element.type == 'Ideal Transformer' and not element.s1 == str(i+1):
+                            gm[i][j] += element.yp
+                        elif element.type == 'Ideal Transformer' and element.s1 == str(i+1):
+                            gm[i][j] = gm[i][j]*element.a**2 + element.a**2*element.yp + element.ys
+                            #gm[i][j] = element.a**2*element.yp + element.ys
+                            
                 else:
                     for element in nodes[j+1]:
+                        # Dont consider current sources
                         if element.type == 'I':
                             continue
-                        if element in nodes[i+1]:
-                            gm[i][j] -= element.Y
+                        elif element in nodes[i+1]:
+                            if element.type == 'R' or element.type == 'L' or element.type == 'C' or element.type == 'V':
+                                gm[i][j] -= element.Y
+                            elif element.type == 'Ideal Transformer':
+                                gm[i][j] -= element.a*element.ys
         self.gm = gm
 
 
@@ -111,19 +155,10 @@ class CurrentMatrix:
                 self.sources[p2] = [(element, 1)]
 
         
-
     def buildCurrentMatrix(self):
         
         #Counting how much nodes the circuit has
-        dimension = 0
-
-        for element in self.elements:
-            p1 = int(element.p.split('-')[0])
-            p2 = int(element.p.split('-')[1])
-            if p1 > dimension:
-                dimension = p1
-            if p2 > dimension:
-                dimension = p2
+        dimension = calculateDimension(self.elements)
 
         im = np.zeros((dimension, 1))
         #print(self.sources)
@@ -142,15 +177,7 @@ class NodesMatrix:
         self.elements = elements
         self.nodes = []
 
-        dimension = 0
-
-        for element in self.elements:
-            p1 = int(element.p.split('-')[0])
-            p2 = int(element.p.split('-')[1])
-            if p1 > dimension:
-                dimension = p1
-            if p2 > dimension:
-                dimension = p2
+        dimension = calculateDimension(self.elements)
 
         for i in range(dimension):
             self.nodes.append([])
