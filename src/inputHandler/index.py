@@ -6,6 +6,8 @@ from entities.source import Source
 from entities.currentSource import CurrentSource
 from inputHandler.rlcReader import rlcReader
 from inputHandler.sourceReader import sourceReader
+from inputHandler.outputReader import outputReader
+
 
 # Declaring the main function
 def readInput(inputPath, dt):
@@ -13,6 +15,7 @@ def readInput(inputPath, dt):
     elements = []
     sourcesTemp = []
     nodes = {'0':'0'}
+    tensionOutputs = []
 
     coln1 = [3, 8]
     coln2 = [9, 14]
@@ -49,8 +52,10 @@ def readInput(inputPath, dt):
             analyzeType = '/SWITCH'
         if '/SOURCE' in line:
             analyzeType = '/SOURCE'
+        if '/OUTPUT' in line:
+            analyzeType = '/OUTPUT'
 
-        #Alanyzing the data in the input file
+        # Alanyzing the data in the input file
         if analyzeType == 'POWER FREQUENCY':
             pass
 
@@ -102,16 +107,16 @@ def readInput(inputPath, dt):
                     elements.append(sourceDC)
                     #continue
                 
+        if analyzeType == '/OUTPUT':
+            # Reading outputs
+            tensionOutputs = outputReader(tensionOutputs, line, coln1, nodes)
 
 
-
-    for ele in elements:
-        print(ele.type, ele.p)
-    return elements, nodes
+    return elements, nodes, tensionOutputs
 
 if __name__ == '__main__':
 
-    elements, nodes = readInput(r'C:\Users\higor\OneDrive\projetos\Spark\inputExamples\Exemplo.atp', .0001)
+    elements, nodes, tensionOutputs = readInput(r'C:\Users\higor\OneDrive\projetos\Spark\inputExamples\Exemplo.atp', .0001)
     #print(elements)
     #print(nodes)
 
