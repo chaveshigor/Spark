@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 import os 
 
-def showResults(time: list, vb: list, elements: list, writeFiles: bool, dt: float):
+def showResults(time: list, vb: list, elements: list, writeFiles: bool, tensionOutputs: list, dt: float):
 
     if writeFiles:
         writeResultsInFile(time, vb, elements, dt)
@@ -12,10 +12,12 @@ def showResults(time: list, vb: list, elements: list, writeFiles: bool, dt: floa
 
         if typeOfResponse == '1':
             #Printing graphic
-            barr = int(input('Digite a barra a se visualizar o resultado: '))
+            #barr = int(input('Digite a barra a se visualizar o resultado: '))
 
             fig, ax = plt.subplots()
-            ax.plot(time[1:10000], vb[barr-1][1:10000])
+            #Geting the bars to plot
+            for barr in tensionOutputs:
+                ax.plot(time[1:10000], vb[barr-1][1:10000])
             ax.set(xlabel='time (ms)', ylabel='voltage (V)', title='Tensão')
             ax.grid()
             plt.show()
