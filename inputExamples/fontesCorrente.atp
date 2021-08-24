@@ -12,13 +12,15 @@ C 345678901234567890123456789012345678901234567890123456789012345678901234567890
 /BRANCH
 C < n1 >< n2 ><ref1><ref2>< R  >< L  >< C  >
 C < n1 >< n2 ><ref1><ref2>< R  >< A  >< B  ><Leng><><>0
-  XX0001                    1.E3                                               0
+  XX0001XX0002              1.E3                                               0
+  XX0002                    1.E3                                               0
 /SOURCE
 C < n 1><>< Ampl.  >< Freq.  ><Phase/T0><   A1   ><   T1   >< TSTART >< TSTOP  >
 11XX0001-1     4321.                                               -1.      1.E3
 14XX0001-1     1234.       50.                                     -1.      100.
 /OUTPUT
   XX0001
+  XX0002
 BLANK BRANCH
 BLANK SWITCH
 BLANK SOURCE
