@@ -2,7 +2,6 @@
 from datetime import datetime
 import numpy as np
 from numpy.linalg import inv
-import os
 
 # Importing the project functions 
 from mathAlgorithms.matrixesBuilders import *
@@ -18,8 +17,8 @@ timeToSimulate = 1
 writeResults = False
 
 # Declaring the elements
-inputPath = r'C:\Users\higor\OneDrive\projetos\teste\Spark\inputExamples\sourcesac.atp'
-elements, allNodes = readInput(inputPath, dt)
+inputPath = r'inputExamples\Exemplo.atp'
+elements, allNodes, tensionOutputs = readInput(inputPath, dt)
 
 # Declaring admitances matrix
 gm = AdmitancesMatrix(elements).gm
@@ -81,4 +80,4 @@ while True:
     a += 1
 
 #Showing the results
-showResults(time, vb, elements, writeResults, dt)
+showResults(time, vb, elements, writeResults, tensionOutputs, dt)
